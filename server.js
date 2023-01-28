@@ -1,10 +1,13 @@
-const express = require('express');
+const WS = require('ws');
 
-const app = express();
-const port = 3000 || process.env.PORT;
+const wss = new WS.WebSocketServer({ host: process.env.HOST || 'localhost', port: 8080 });
 
-app.get('/', (req, res) => res.send('Hello from server!'));
+wss.on('connection', function connection(ws) {
+    console.log('SERVER:: A new client connected...');
 
-app.listen(() => {
-    console.log(`Server is listening port ${port}...`);
-})
+    ws.send('FROM SERVER:: You are connected to the server...');
+
+    ws.on('message', function message(data) {
+        console.log('FROM CLIENT::', data);
+    });
+});
