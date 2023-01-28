@@ -7,9 +7,9 @@ const INDEX = './index.html';
 const app = express();
 
 app.use((req, res) => res.sendFile(INDEX, { root: __dirname }))
-app.listen(PORT, () => console.log(`Server is listening on ${PORT}...`));
 
-const wss = new WS.WebSocketServer({ host: process.env.HOST || 'localhost', port: 8080 });
+const httpServer = app.listen(PORT, () => console.log(`Server is listening on ${PORT}...`));
+const wss = new WS.WebSocketServer({ server: httpServer, host: process.env.HOST || 'localhost', port: 8080 });
 wss.on('connection', function connection(ws) {
     console.log('SERVER:: A new client connected...');
 
