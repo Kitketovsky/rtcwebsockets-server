@@ -15,6 +15,7 @@ const roomEventsController = (io, socket) => {
 
   socket.on(ACTIONS.ROOM_JOIN, (roomId) => {
     socket.join(roomId);
+    console.log(io.of("/").adapter.rooms);
   });
 
   socket.on(ACTIONS.ROOM_CREATE, (roomName) => {
