@@ -1,10 +1,11 @@
 const ACTIONS = {
   CONNECTED: "connected",
   JOIN: "join",
-  NEW_CLIENT: "new_client",
+  CLIENT_NEW: "client_new",
   OFFER: "offer",
   ANSWER: "answer",
   ICE: "ice",
+  CLIENT_DISCONNECTED: "client_disconnected",
 };
 
 module.exports = { ACTIONS };
