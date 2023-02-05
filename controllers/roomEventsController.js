@@ -7,10 +7,14 @@ const roomEventsController = (io, socket) => {
     return getRoomsWithoutSockets(roomsMap);
   };
 
-  // Отправляем список комнат
-  socket.on(ACTIONS.ROOM_LIST, () => {
+  // Добавляем префикс "room:" к комнате, чтобы отличить ее от комнат сокетов
+  socket.on(ACTIONS.ROOM_CREATE, (roomName) => {
+    const roomId = createRoomId(roomName);
+    socket.join(roomId);
+
+    // Всем клиентам отправляем обновленный список комнат
     const rooms = getUpdatedRoomsWithoutSockets();
-    socket.emit(ACTIONS.ROOM_LIST, rooms);
+    io.of("/").emit(ACTIONS.ROOM_LIST, rooms);
   });
 
   // При присоединении в комнату оповещаем об этом других
@@ -19,13 +23,14 @@ const roomEventsController = (io, socket) => {
     socket.broadcast.emit(ACTIONS.ROOM_NEW_CLIENT_NOTIFICATION, socket.id);
   });
 
-  // Если клиент нажал на кнопку "Выйти"
-  socket.on(ACTIONS.ROOM_LEAVE, (roomId) => {
-    io.to(roomId).emit(ACTIONS.ROOM_CLIENT_LEAVE_NOTIFICATION, socket.id);
-    socket.leave(roomId);
+  // Отправляем список всех комнат с "room:" префиксом
+  socket.on(ACTIONS.ROOM_LIST, () => {
+    const rooms = getUpdatedRoomsWithoutSockets();
+    socket.emit(ACTIONS.ROOM_LIST, rooms);
   });
 
   // При отсутствии соединения или закрытии браузера
+  // Используется "disconnecting", пока мы можем видеть комнаты до "disconnect"
   socket.on("disconnecting", () => {
     for (let room of socket.rooms) {
       if (room !== socket.id) {
@@ -34,13 +39,10 @@ const roomEventsController = (io, socket) => {
     }
   });
 
-  // Добавляем префикс "room:" к комнате, чтобы отличить ее от комнат сокетов
-  socket.on(ACTIONS.ROOM_CREATE, (roomName) => {
-    const roomId = createRoomId(roomName);
-    socket.join(roomId);
-    const rooms = getUpdatedRoomsWithoutSockets();
-
-    io.of("/").emit(ACTIONS.ROOM_LIST, rooms);
+  // Если клиент нажал на кнопку "Выйти"
+  socket.on(ACTIONS.ROOM_LEAVE, (roomId) => {
+    socket.leave(roomId);
+    io.to(roomId).emit(ACTIONS.ROOM_CLIENT_LEAVE_NOTIFICATION, socket.id);
   });
 };
 
