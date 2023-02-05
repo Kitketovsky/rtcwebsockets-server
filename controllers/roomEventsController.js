@@ -7,25 +7,39 @@ const roomEventsController = (io, socket) => {
     return getRoomsWithoutSockets(roomsMap);
   };
 
-  // При подключение нового клиента, только ему отправить список комнат
+  // Отправляем список комнат
   socket.on(ACTIONS.ROOM_LIST, () => {
     const rooms = getUpdatedRoomsWithoutSockets();
     socket.emit(ACTIONS.ROOM_LIST, rooms);
   });
 
+  // При присоединении в комнату оповещаем об этом других
   socket.on(ACTIONS.ROOM_JOIN, (roomId) => {
     socket.join(roomId);
-    console.log(io.of("/").adapter.rooms);
+    socket.broadcast.emit(ACTIONS.ROOM_NEW_CLIENT_NOTIFICATION, socket.id);
   });
 
+  // Если клиент нажал на кнопку "Выйти"
+  socket.on(ACTIONS.ROOM_LEAVE, (roomId) => {
+    io.to(roomId).emit(ACTIONS.ROOM_CLIENT_LEAVE_NOTIFICATION, socket.id);
+    socket.leave(roomId);
+  });
+
+  // При отсутствии соединения или закрытии браузера
+  socket.on("disconnecting", () => {
+    for (let room of socket.rooms) {
+      if (room !== socket.id) {
+        socket.to(room).emit(ACTIONS.ROOM_CLIENT_LEAVE_NOTIFICATION, socket.id);
+      }
+    }
+  });
+
+  // Добавляем префикс "room:" к комнате, чтобы отличить ее от комнат сокетов
   socket.on(ACTIONS.ROOM_CREATE, (roomName) => {
-    // e.g., room:my_private_room
     const roomId = createRoomId(roomName);
     socket.join(roomId);
-
     const rooms = getUpdatedRoomsWithoutSockets();
 
-    // При создании комнаты всем клиентам отправить обновленный список
     io.of("/").emit(ACTIONS.ROOM_LIST, rooms);
   });
 };
